@@ -56,7 +56,7 @@ def read_tensor_from_image_file(file_name, input_height=299, input_width=299,
   else:
     image_reader = tf.image.decode_jpeg(file_reader, channels = 3,
                                         name='jpeg_reader')
-    
+
   float_caster = tf.cast(image_reader, tf.float32)
   dims_expander = tf.expand_dims(float_caster, 0);
   resized = tf.image.resize_bilinear(dims_expander, [input_height, input_width])
@@ -73,9 +73,9 @@ def load_labels(label_file):
     label.append(l.rstrip())
   return label
 
-  
-model_file = "/home/pi/examples/tf_files/output_graph.pb"
-label_file = "/home/pi/examples/tf_files/output_labels.txt"
+
+model_file = "/home/pi/home_security/tf_files/output_graph.pb"
+label_file = "/home/pi/home_security/tf_files/output_labels.txt"
 input_height = 224
 input_width = 224
 input_mean = 128
@@ -118,7 +118,7 @@ graph = load_graph(model_file)
 labels = load_labels(label_file)
 def detect(file_name):
     try:
-      face_cascade = cv2.CascadeClassifier('/home/pi/examples/haarcascade_frontalface_default.xml')
+      face_cascade = cv2.CascadeClassifier('/home/pi/home_security/haarcascade_frontalface_default.xml')
       img = cv2.imread(file_name)
       faces = face_cascade.detectMultiScale(img, 1.3, 5)
       x=faces[0][0]
@@ -127,18 +127,18 @@ def detect(file_name):
       h=faces[0][3]
       img = img[ y:y+h, x:x+w]
       #cv2.imshow('image',img)
-      cv2.imwrite('/home/pi/examples/img.jpg',img)
+      cv2.imwrite('/home/pi/home_security/img.jpg',img)
       #k=cv2.waitKey(0)
       #if k == 27:
       #    cv2.destroyAllWindows()
-      file_name = "/home/pi/examples/img.jpg"
+      file_name = "/home/pi/home_security/img.jpg"
       with tf.Session(graph=graph) as sess:
           t = read_tensor_from_image_file(file_name,
                                           input_height=input_height,
                                           input_width=input_width,
                                           input_mean=input_mean,
                                           input_std=input_std)
-        
+
           input_name = "import/" + input_layer
           output_name = "import/" + output_layer
           input_operation = graph.get_operation_by_name(input_name);
@@ -148,14 +148,14 @@ def detect(file_name):
                              {input_operation.outputs[0]: t})
           end=time.time()
           results = np.squeeze(results)
-          
+
           top_k = results.argsort()[-5:][::-1]
-        
-          print('\nEvaluation time (1-image): {:.3f}s\n'.format(end-start))
-          template = "{} (score={:0.5f})"
+
+          #print('\nEvaluation time (1-image): {:.3f}s\n'.format(end-start))
+          #template = "{} (score={:0.5f})"
           #~ for i in top_k:
             #~ print(template.format(labels[i], results[i]))
-      if results[top_k[0]]>=0.4:
+      if results[top_k[0]]>=0.6:
         return labels[top_k[0]]
       else:
         return labels[-1]
@@ -163,4 +163,4 @@ def detect(file_name):
       return labels[-1]
 
 if __name__ == "__main__":
-    print(detect("/home/pi/examples/foo.jpg"))
+    print(detect("/home/pi/home_security/img.jpg"))
